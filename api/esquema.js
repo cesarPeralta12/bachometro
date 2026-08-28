@@ -189,6 +189,26 @@ COMMIT;
 -- ============================================================
 
 ALTER TYPE estado_plan ADD VALUE IF NOT EXISTS 'arreglando' AFTER 'en_ruta';
+
+-- ============================================================
+-- Fotos
+--
+-- En tu PC las fotos van a la carpeta api/uploads/. En la nube no hay disco
+-- que sobreviva a la petición, así que van acá.
+--
+-- Guardar imágenes en la base no escala a millones, pero para esta app cierra:
+-- cada foto viaja comprimida a 60-120 KB, así que el medio giga del plan
+-- gratuito da para varios miles. Si algún día queda chico, se cambia el
+-- almacén sin tocar el resto del código.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS fotos (
+  nombre    text PRIMARY KEY,
+  tipo      text NOT NULL,
+  contenido bytea NOT NULL,
+  bytes     integer NOT NULL,
+  creado_en timestamptz NOT NULL DEFAULT now()
+);
 `;
 
 export const SEMILLA = `-- ============================================================
