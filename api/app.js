@@ -17,8 +17,8 @@
 import express from 'express';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { carpetaDe } from './entorno.js';
 import { pool, configuracionFaltante } from './db.js';
+import { enServerless, carpetaDe } from './entorno.js';
 import * as almacen from './almacen.js';
 import { ESQUEMA, SEMILLA } from './esquema.js';
 
@@ -860,6 +860,25 @@ app.delete('/api/admin/cuadrillas/:id', requiereAdmin, async (req, res, siguient
 
     res.json({ ok: true, trabajosLiberados: abiertos.rows[0].n });
   } catch (error) { siguiente(error); }
+});
+
+// ---------- Diagnóstico ----------
+// Dice qué variables de conexión ve el servidor, para saber si la plataforma
+// se las está pasando. Devuelve NOMBRES y si tienen valor, nunca los valores:
+// una cadena de conexión lleva usuario y contraseña adentro.
+app.get('/api/admin/diagnostico', requiereAdmin, (_req, res) => {
+  const interesantes = Object.keys(process.env)
+    .filter(k => /DATABASE|POSTGRES|^PG|NEON|NETLIFY|LAMBDA/i.test(k))
+    .sort()
+    .map(k => ({ variable: k, tieneValor: Boolean(process.env[k]) }));
+
+  res.json({
+    enServerless,
+    baseConfigurada: !configuracionFaltante,
+    motivo: configuracionFaltante,
+    variables: interesantes,
+    node: process.version,
+  });
 });
 
 // ---------- Instalación de la base ----------
