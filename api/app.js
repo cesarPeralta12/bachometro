@@ -41,7 +41,12 @@ app.use((req, _res, siguiente) => {
 
 // Sin base de datos no hay nada que contestar. Se responde con el motivo
 // concreto en vez de dejar que reviente más adelante con un error genérico.
-app.use('/api', (_req, res, siguiente) => {
+app.use('/api', (req, res, siguiente) => {
+  // El diagnóstico queda afuera: existe precisamente para poder consultarlo
+  // cuando la base NO está configurada. Bloquearlo con este mismo guardia lo
+  // volvía inútil.
+  if (req.path === '/admin/diagnostico') return siguiente();
+
   if (configuracionFaltante) {
     return res.status(503).json({ error: configuracionFaltante });
   }
