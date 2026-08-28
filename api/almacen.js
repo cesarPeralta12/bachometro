@@ -16,7 +16,7 @@
 // ============================================================
 
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { enServerless, carpetaDe } from './entorno.js';
 
 // Dónde guarda las fotos cuando corre en tu PC.
 //
@@ -25,11 +25,13 @@ import { fileURLToPath } from 'node:url';
 // fallar la función entera —aunque allá las fotos van a Blobs y esta carpeta
 // no se toque nunca—.
 function carpetaLocal() {
-  return path.join(path.dirname(fileURLToPath(import.meta.url)), 'uploads');
+  const aqui = carpetaDe(import.meta.url);
+  if (!aqui) throw new Error('No se puede saber dónde guardar las fotos en disco.');
+  return path.join(aqui, 'uploads');
 }
 
-// Netlify define esta variable en todos sus entornos de ejecución.
-export const enNetlify = Boolean(process.env.NETLIFY);
+// Se reexporta para que el resto del código no tenga que saber de entorno.js.
+export const enNetlify = enServerless;
 
 const TIPOS_POR_EXTENSION = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg',

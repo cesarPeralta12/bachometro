@@ -17,7 +17,7 @@
 import express from 'express';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
+import { carpetaDe } from './entorno.js';
 import { pool, configuracionFaltante } from './db.js';
 import * as almacen from './almacen.js';
 import { ESQUEMA, SEMILLA } from './esquema.js';
@@ -908,10 +908,10 @@ app.get('/uploads/:archivo', async (req, res, siguiente) => {
 // En Netlify las páginas las sirve su CDN directamente y esto no se usa,
 // pero en tu PC es lo que hace que todo viva en una sola dirección.
 if (!almacen.enNetlify) {
-  // La ruta se calcula acá adentro: ver el comentario en db.js sobre
-  // import.meta.url y el empaquetador de Netlify.
-  const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-  app.use(express.static(path.join(raiz, 'public')));
+  // Si no se puede saber dónde está este archivo, no hay carpeta public/ que
+  // servir; en ese caso se omite en vez de fallar.
+  const aqui = carpetaDe(import.meta.url);
+  if (aqui) app.use(express.static(path.join(aqui, '..', 'public')));
 }
 
 // ---------- Errores ----------

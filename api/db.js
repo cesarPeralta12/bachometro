@@ -5,19 +5,15 @@
 
 import pg from 'pg';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { enServerless, carpetaDe } from './entorno.js';
 
-// El archivo .env es para tu PC. En Netlify no existe: las variables las
-// inyecta la plataforma.
-//
-// La ruta se calcula ACÁ ADENTRO a propósito. El empaquetador de Netlify
-// transforma los módulos y en el resultado `import.meta.url` queda undefined,
-// así que calcularla arriba del archivo hacía reventar la función al cargar
-// —aunque en Netlify esta ruta no se use nunca—.
-if (!process.env.NETLIFY) {
-  const aqui = path.dirname(fileURLToPath(import.meta.url));
-  dotenv.config({ path: path.join(aqui, '.env') });
+// El archivo .env es para tu PC. En la nube no existe: las variables las
+// inyecta la plataforma. Si además no se puede saber en qué carpeta está este
+// módulo (pasa al empaquetar a CommonJS), simplemente no se busca el archivo.
+if (!enServerless) {
+  const aqui = carpetaDe(import.meta.url);
+  if (aqui) dotenv.config({ path: path.join(aqui, '.env') });
 }
 
 // Hay dos formas de decir a qué base conectarse:
@@ -32,8 +28,6 @@ export const urlDeLaBase =
   process.env.NETLIFY_DATABASE_URL ||
   process.env.DATABASE_URL ||
   null;
-
-const enServerless = Boolean(process.env.NETLIFY);
 
 // Qué le falta a la configuración, si es que le falta algo.
 //
