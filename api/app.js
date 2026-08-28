@@ -28,12 +28,14 @@ const app = express();
 app.use(express.json({ limit: '12mb' }));
 
 // En Netlify el pedido llega con el prefijo de la función adelante
-// (/.netlify/functions/api/api/reportes) y Express espera /api/reportes.
+// (/.netlify/functions/servidor/api/reportes) y Express espera /api/reportes.
+// El nombre de la función se saca con un comodín para que renombrarla no
+// vuelva a romper esto.
 // Tiene que ir ANTES de las rutas: un middleware registrado después ya no
 // alcanza a modificar la URL a tiempo. En tu PC este prefijo nunca aparece,
 // así que no hace nada.
 app.use((req, _res, siguiente) => {
-  req.url = req.url.replace(/^\/\.netlify\/functions\/api/, '') || '/';
+  req.url = req.url.replace(/^\/\.netlify\/functions\/[^/]+/, '') || '/';
   siguiente();
 });
 

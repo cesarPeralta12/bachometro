@@ -15,7 +15,7 @@
 # Todo /api/... entra a la función que envuelve Express.
 [[redirects]]
   from   = "/api/*"
-  to     = "/.netlify/functions/api/api/:splat"
+  to     = "/.netlify/functions/servidor/api/:splat"
   status = 200
 
 # ---------- Las fotos ----------
@@ -23,5 +23,5 @@
 # la misma función.
 [[redirects]]
   from   = "/uploads/*"
-  to     = "/.netlify/functions/api/uploads/:splat"
+  to     = "/.netlify/functions/servidor/uploads/:splat"
   status = 200
