@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bachómetro — Panel de administración</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="admin.css?v=5">
+</head>
+<body class="admin">
+
+  <!-- ===== Pantalla de acceso ===== -->
+  <div id="pantalla-acceso" class="acceso">
+    <form id="form-acceso" class="acceso-caja">
+      <h1>🕳️ Panel de administración</h1>
+      <p class="ayuda">Ingresá el token configurado en <code>api/.env</code>.</p>
+      <input id="f-token" type="password" placeholder="Token de administración" required autocomplete="current-password">
+      <p id="error-acceso" class="error-acceso"></p>
+      <button type="submit" class="btn-primario">Entrar</button>
+      <a href="/" class="volver">← Volver al mapa público</a>
+    </form>
+  </div>
+
+  <!-- ===== Panel ===== -->
+  <div id="panel" class="oculto">
+
+    <header class="topbar">
+      <div class="logo">🕳️ <strong>Panel</strong> <span>Bachómetro</span></div>
+      <nav class="pestanas">
+        <button class="pestana activa" data-vista="resumen">Resumen</button>
+        <button class="pestana" data-vista="reportes">Reportes</button>
+        <button class="pestana" data-vista="plan">Plan de bacheo</button>
+        <button class="pestana" data-vista="rutas">Ruta de bacheo</button>
+        <button class="pestana" data-vista="cuadrilla">Cuadrilla</button>
+        <button class="pestana" data-vista="fotos">Fotos</button>
+      </nav>
+      <a href="/" class="btn-secundario">Ver el mapa</a>
+      <button id="btn-salir" class="btn-secundario">Salir</button>
+    </header>
+
+    <!-- ---------- Vista: Resumen ---------- -->
+    <section id="vista-resumen" class="vista">
+      <div class="tarjetas">
+        <div class="tarjeta"><span id="r-total">–</span><small>Reportes totales</small></div>
+        <div class="tarjeta"><span id="r-semana">–</span><small>Últimos 7 días</small></div>
+        <div class="tarjeta"><span id="r-votos">–</span><small>Confirmaciones</small></div>
+        <div class="tarjeta"><span id="r-fotos">–</span><small>Fotos guardadas</small></div>
+        <div class="tarjeta"><span id="r-disco">–</span><small>Espacio en disco</small></div>
+      </div>
+
+      <div class="columnas">
+        <article class="bloque">
+          <h2>Por estado</h2>
+          <div id="grafico-estado" class="barras"></div>
+        </article>
+
+        <article class="bloque">
+          <h2>Por gravedad</h2>
+          <div id="grafico-gravedad" class="barras"></div>
+        </article>
+      </div>
+
+      <article class="bloque">
+        <h2>Por departamento</h2>
+        <div id="grafico-depto" class="barras"></div>
+      </article>
+    </section>
+
+    <!-- ---------- Vista: Reportes ---------- -->
+    <section id="vista-reportes" class="vista oculto">
+      <div class="barra-filtros">
+        <select id="filtro-depto"><option value="">Todos los departamentos</option></select>
+        <select id="filtro-estado">
+          <option value="">Todos los estados</option>
+          <option value="reportado">Reportado</option>
+          <option value="verificado">Verificado</option>
+          <option value="en_progreso">En progreso</option>
+          <option value="reparado">Reparado</option>
+        </select>
+        <select id="filtro-gravedad">
+          <option value="">Toda gravedad</option>
+          <option value="leve">Leve</option>
+          <option value="moderado">Moderado</option>
+          <option value="grave">Grave</option>
+          <option value="critico">Crítico</option>
+        </select>
+        <select id="filtro-fuente">
+          <option value="">Toda fuente</option>
+          <option value="ciudadano">Ciudadanos</option>
+          <option value="waze">Waze</option>
+        </select>
+        <input id="filtro-busqueda" type="search" placeholder="Buscar calle, descripción o autor…">
+        <button id="btn-recargar" class="btn-secundario">↻ Recargar</button>
+      </div>
+
+      <div class="barra-lote">
+        <label><input type="checkbox" id="marcar-todos"> Seleccionar todo</label>
+        <span id="conteo-seleccion" class="conteo-seleccion">0 seleccionados</span>
+        <button id="btn-borrar-lote" class="btn-peligro" disabled>🗑 Borrar seleccionados</button>
+        <span id="conteo-tabla" class="conteo-tabla"></span>
+      </div>
+
+      <div class="tabla-scroll">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-check"></th>
+              <th class="col-foto">Foto</th>
+              <th>Reporte</th>
+              <th>Depto</th>
+              <th>Gravedad</th>
+              <th>Estado</th>
+              <th>Votos</th>
+              <th>Fecha</th>
+              <th class="col-acciones">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-tabla"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- Vista: Plan de bacheo ---------- -->
+    <section id="vista-plan" class="vista oculto">
+      <div class="tarjetas">
+        <div class="tarjeta"><span id="p-pendientes">–</span><small>Pendientes</small></div>
+        <div class="tarjeta"><span id="p-ruta">–</span><small>Cuadrillas en la calle</small></div>
+        <div class="tarjeta"><span id="p-ejecutados">–</span><small>Ejecutados</small></div>
+        <div class="tarjeta"><span id="p-costo">–</span><small>Costo estimado (Bs)</small></div>
+        <div class="tarjeta"><span id="p-proxima">–</span><small>Próxima salida</small></div>
+      </div>
+
+      <div class="barra-filtros">
+        <select id="plan-depto"><option value="">Todos los departamentos</option></select>
+        <select id="plan-estado">
+          <option value="">Todo el plan</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="en_ruta">En camino</option>
+          <option value="arreglando">Arreglando</option>
+          <option value="ejecutado">Solucionados</option>
+          <option value="cancelado">Cancelados</option>
+        </select>
+        <button id="plan-recargar" class="btn-secundario">↻ Recargar</button>
+        <span class="ayuda plan-ayuda">
+          Los baches se agregan al plan desde la pestaña <strong>Reportes</strong>, con el botón 📋.
+        </span>
+      </div>
+
+      <div class="tabla-scroll">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="col-prioridad">Prio.</th>
+              <th class="col-foto">Foto</th>
+              <th>Bache</th>
+              <th>Depto</th>
+              <th>Programado</th>
+              <th>Cuadrilla</th>
+              <th>Desde alcaldía</th>
+              <th>Costo</th>
+              <th>Estado</th>
+              <th class="col-acciones">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpo-plan"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- Vista: Ruta de bacheo ---------- -->
+    <section id="vista-rutas" class="vista oculto">
+      <div class="barra-filtros">
+        <select id="rutas-depto"></select>
+        <label class="interruptor">
+          <input type="checkbox" id="rutas-todas"> Mostrar todas las rutas a la vez
+        </label>
+        <button id="rutas-recargar" class="btn-secundario">↻ Recargar</button>
+      </div>
+
+      <div class="rutas-layout">
+
+        <!-- Columna izquierda: trabajos y cuadrillas -->
+        <aside class="rutas-panel">
+          <h2>Trabajos programados</h2>
+          <p class="ayuda">Tocá uno para ver por dónde va la cuadrilla.</p>
+          <ul id="rutas-lista" class="rutas-lista"></ul>
+
+          <h2>Cuadrillas</h2>
+          <ul id="rutas-leyenda" class="leyenda"></ul>
+
+          <form id="form-cuadrilla" class="alta-cuadrilla">
+            <input id="cu-nombre" placeholder="Nueva cuadrilla" maxlength="80" required>
+            <input id="cu-color" type="color" value="#22d3ee" title="Color de sus rutas">
+            <button type="submit" class="btn-secundario">Agregar</button>
+          </form>
+        </aside>
+
+        <!-- Columna derecha: mapa -->
+        <div class="rutas-mapa-caja">
+          <div id="mapa-rutas" class="mapa-rutas"></div>
+          <div id="rutas-detalle" class="rutas-detalle">
+            Elegí un trabajo de la lista para ver su ruta.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- Vista: Cuadrilla (órdenes de trabajo) ---------- -->
+    <section id="vista-cuadrilla" class="vista oculto">
+      <div class="barra-filtros">
+        <select id="cua-depto"></select>
+        <select id="cua-cuadrilla"></select>
+        <label class="interruptor">
+          <input type="checkbox" id="cua-terminadas"> Ver también las terminadas
+        </label>
+        <button id="cua-recargar" class="btn-secundario">↻ Recargar</button>
+      </div>
+
+      <div class="cuadrilla-layout">
+
+        <!-- Órdenes asignadas -->
+        <aside class="ordenes-panel">
+          <h2>Órdenes de trabajo <span id="cua-conteo" class="conteo"></span></h2>
+          <ul id="cua-lista" class="ordenes-lista"></ul>
+        </aside>
+
+        <!-- La orden elegida -->
+        <div id="cua-orden" class="orden">
+          <p class="ayuda orden-vacia">Elegí una orden de la lista para verla.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- Vista: Fotos ---------- -->
+    <section id="vista-fotos" class="vista oculto">
+      <div class="bloque">
+        <h2>Galería de fotos</h2>
+        <p class="ayuda">Cada foto pertenece a un reporte. Al borrarla, el reporte queda sin imagen.</p>
+        <div id="galeria" class="galeria"></div>
+      </div>
+
+      <div class="bloque">
+        <h2>Fotos huérfanas</h2>
+        <p class="ayuda">
+          Archivos que quedaron en <code>api/uploads/</code> sin ningún reporte que los use.
+          Aparecen si se borró una fila directamente desde la base.
+        </p>
+        <div id="huerfanas" class="huerfanas"></div>
+        <button id="btn-limpiar-huerfanas" class="btn-peligro">🧹 Borrar todas las huérfanas</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== Modal: editar reporte ===== -->
+  <div id="modal-editar" class="modal oculto">
+    <form id="form-editar" class="modal-caja">
+      <header class="modal-cabecera">
+        <h2>Editar reporte <span id="e-id" class="conteo"></span></h2>
+        <button type="button" class="cerrar" data-cerrar="modal-editar">✕</button>
+      </header>
+
+      <img id="e-foto" class="foto-grande" alt="">
+
+      <label class="sub">Calle o referencia
+        <input id="e-referencia" required>
+      </label>
+      <label class="sub">Descripción
+        <textarea id="e-descripcion" rows="3"></textarea>
+      </label>
+      <label class="sub">Reportado por
+        <input id="e-autor">
+      </label>
+
+      <div class="fila">
+        <label class="sub">Gravedad
+          <select id="e-gravedad">
+            <option value="leve">Leve</option>
+            <option value="moderado">Moderado</option>
+            <option value="grave">Grave</option>
+            <option value="critico">Crítico</option>
+          </select>
+        </label>
+        <label class="sub">Tamaño
+          <select id="e-tamano">
+            <option value="chico">Chico</option>
+            <option value="mediano">Mediano</option>
+            <option value="grande">Grande</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="fila">
+        <label class="sub">Estado
+          <select id="e-estado">
+            <option value="reportado">Reportado</option>
+            <option value="verificado">Verificado</option>
+            <option value="en_progreso">En progreso</option>
+            <option value="reparado">Reparado</option>
+          </select>
+        </label>
+        <label class="sub">Fuente
+          <select id="e-fuente">
+            <option value="ciudadano">Reporte ciudadano</option>
+            <option value="waze">Alerta Waze</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="acciones">
+        <button type="button" id="btn-borrar-foto" class="btn-peligro">Quitar foto</button>
+        <button type="button" class="btn-secundario" data-cerrar="modal-editar">Cancelar</button>
+        <button type="submit" class="btn-primario">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== Modal: detalle del bache con ruta desde la alcaldía ===== -->
+  <div id="modal-detalle" class="modal oculto">
+    <div class="modal-caja ancha">
+      <header class="modal-cabecera">
+        <h2 id="v-titulo">Detalle del bache</h2>
+        <button type="button" class="cerrar" data-cerrar="modal-detalle">✕</button>
+      </header>
+
+      <div class="detalle-columnas">
+        <div>
+          <img id="v-foto" class="foto-grande" alt="">
+          <dl class="ficha" id="v-ficha"></dl>
+        </div>
+
+        <div>
+          <div id="mapa-ruta" class="mapa-ruta"></div>
+          <div id="v-ruta" class="resumen-ruta">Calculando la ruta…</div>
+          <div class="acciones acciones-ruta">
+            <a id="v-google" class="btn-secundario" target="_blank" rel="noopener noreferrer">
+              Abrir en Google Maps
+            </a>
+            <button type="button" id="v-planificar" class="btn-primario">📋 Agregar al plan</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal: alta / edición en el plan ===== -->
+  <div id="modal-plan" class="modal oculto">
+    <form id="form-plan" class="modal-caja">
+      <header class="modal-cabecera">
+        <h2 id="pl-titulo">Programar bacheo</h2>
+        <button type="button" class="cerrar" data-cerrar="modal-plan">✕</button>
+      </header>
+
+      <p id="pl-bache" class="descripcion"></p>
+
+      <div class="fila">
+        <label class="sub">Prioridad
+          <select id="pl-prioridad">
+            <option value="1">1 — Urgente</option>
+            <option value="2">2 — Alta</option>
+            <option value="3" selected>3 — Normal</option>
+            <option value="4">4 — Baja</option>
+            <option value="5">5 — Cuando se pueda</option>
+          </select>
+        </label>
+        <label class="sub">Fecha programada
+          <input id="pl-fecha" type="date">
+        </label>
+      </div>
+
+      <div class="fila">
+        <label class="sub">Cuadrilla a cargo
+          <select id="pl-cuadrilla"></select>
+        </label>
+        <label class="sub">Costo estimado (Bs)
+          <input id="pl-costo" type="number" min="0" step="0.01" placeholder="0.00">
+        </label>
+      </div>
+
+      <label class="sub" id="pl-estado-campo" hidden>Estado del trabajo
+        <select id="pl-estado">
+          <option value="pendiente">Pendiente</option>
+          <option value="en_ruta">Cuadrilla en ruta</option>
+          <option value="ejecutado">Ejecutado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </label>
+
+      <label class="sub">Notas para la cuadrilla
+        <textarea id="pl-notas" rows="2" placeholder="Ej: llevar 3 bolsas de asfalto en frío"></textarea>
+      </label>
+
+      <p class="ayuda">
+        Al marcar <strong>en ruta</strong> el bache pasa a “En progreso” en el mapa público,
+        y al marcarlo <strong>ejecutado</strong> pasa a “Reparado”.
+      </p>
+
+      <div class="acciones">
+        <button type="button" class="btn-secundario" data-cerrar="modal-plan">Cancelar</button>
+        <button type="submit" class="btn-primario">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== Modal: confirmar borrado ===== -->
+  <div id="modal-confirmar" class="modal oculto">
+    <div class="modal-caja angosta">
+      <header class="modal-cabecera">
+        <h2>Confirmar</h2>
+        <button type="button" class="cerrar" data-cerrar="modal-confirmar">✕</button>
+      </header>
+      <p id="c-mensaje" class="descripcion"></p>
+      <p class="ayuda">Esta acción no se puede deshacer.</p>
+      <div class="acciones">
+        <button type="button" class="btn-secundario" data-cerrar="modal-confirmar">Cancelar</button>
+        <button type="button" id="btn-confirmar" class="btn-peligro">Sí, borrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aviso" class="aviso oculto"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="admin.js?v=5"></script>
+  <script src="admin-plan.js?v=5"></script>
+  <script src="admin-rutas.js?v=5"></script>
+  <script src="admin-cuadrilla.js?v=7"></script>
+</body>
+</html>

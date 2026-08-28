@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bachómetro Bolivia</title>
+
+  <!-- Leaflet: mapa gratis, sin API key -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=6">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="logo">🕳️ <strong>Bachómetro</strong> <span>Bolivia</span></div>
+
+    <select id="departamento" title="Departamento"></select>
+    <input id="buscador" class="buscador" type="search" placeholder="Buscar por calle o referencia…">
+    <button id="btn-reportar" class="btn-primario">📷 Reportar bache</button>
+  </header>
+
+  <main class="layout">
+
+    <!-- Panel izquierdo: stats + filtros + lista -->
+    <aside class="panel">
+      <section class="stats">
+        <div class="stat"><span id="stat-total">0</span><small>Reportes</small></div>
+        <div class="stat"><span id="stat-abiertos">0</span><small>Abiertos</small></div>
+        <div class="stat"><span id="stat-progreso">0</span><small>En obra</small></div>
+        <div class="stat"><span id="stat-reparados">0</span><small>Reparados</small></div>
+      </section>
+
+      <section class="filtros">
+        <h3>Estado</h3>
+        <label><input type="checkbox" class="f-estado" value="reportado" checked> Reportado</label>
+        <label><input type="checkbox" class="f-estado" value="verificado" checked> Verificado</label>
+        <label><input type="checkbox" class="f-estado" value="en_progreso" checked> En progreso</label>
+        <label><input type="checkbox" class="f-estado" value="reparado" checked> Reparado</label>
+
+        <h3>Gravedad</h3>
+        <label><input type="checkbox" class="f-gravedad" value="leve" checked> <i class="punto leve"></i> Leve</label>
+        <label><input type="checkbox" class="f-gravedad" value="moderado" checked> <i class="punto moderado"></i> Moderado</label>
+        <label><input type="checkbox" class="f-gravedad" value="grave" checked> <i class="punto grave"></i> Grave</label>
+        <label><input type="checkbox" class="f-gravedad" value="critico" checked> <i class="punto critico"></i> Crítico</label>
+
+        <h3>Fuente</h3>
+        <label><input type="checkbox" class="f-fuente" value="ciudadano" checked> Reportes ciudadanos</label>
+        <label><input type="checkbox" class="f-fuente" value="waze" checked> Alertas Waze</label>
+      </section>
+
+      <section class="lista">
+        <h3>Reportes <span id="conteo-lista" class="conteo"></span></h3>
+        <ul id="lista-reportes"></ul>
+      </section>
+    </aside>
+
+    <!-- Mapa -->
+    <div id="mapa"></div>
+  </main>
+
+  <!-- ===== Modal: nuevo reporte ===== -->
+  <div id="modal-reporte" class="modal oculto">
+    <form id="form-reporte" class="modal-caja">
+      <header class="modal-cabecera">
+        <h2>Reportar un bache</h2>
+        <button type="button" class="cerrar" data-cerrar="modal-reporte">✕</button>
+      </header>
+
+      <!-- 1. Foto -->
+      <div class="campo">
+        <span class="etiqueta">1. Foto del bache <b class="req">obligatoria</b></span>
+        <label id="zona-foto" class="zona-foto">
+          <input id="f-foto" type="file" accept="image/*" capture="environment" hidden>
+          <img id="preview-foto" alt="" hidden>
+          <div id="zona-foto-texto">
+            <strong>Tomar o subir foto</strong>
+            <small>Desde el celular se abre la cámara</small>
+          </div>
+        </label>
+        <p id="foto-info" class="ayuda"></p>
+      </div>
+
+      <!-- 2. Ubicación -->
+      <div class="campo">
+        <span class="etiqueta">2. ¿Dónde está el bache? <b class="req">obligatoria</b></span>
+        <div id="mini-mapa"></div>
+        <p id="ayuda-ubicacion" class="ayuda">
+          Tocá el mapa para poner el pin. Podés arrastrarlo para ajustarlo.
+        </p>
+        <div class="fila">
+          <input id="f-coords" readonly placeholder="Sin marcar todavía">
+          <button type="button" id="btn-gps" class="btn-secundario" title="Usar mi ubicación actual">📍 GPS</button>
+        </div>
+      </div>
+
+      <!-- 3. Datos básicos -->
+      <div class="campo">
+        <span class="etiqueta">3. Datos del bache</span>
+
+        <label class="sub">Calle o referencia <b class="req">*</b>
+          <input id="f-referencia" required placeholder="Ej: Av. Banzer entre 3er y 4to anillo">
+        </label>
+
+        <div class="fila">
+          <label class="sub">Gravedad
+            <select id="f-gravedad">
+              <option value="leve">Leve — se esquiva fácil</option>
+              <option value="moderado" selected>Moderado — molesta al pasar</option>
+              <option value="grave">Grave — puede dañar el auto</option>
+              <option value="critico">Crítico — peligro real</option>
+            </select>
+          </label>
+
+          <label class="sub">Tamaño
+            <select id="f-tamano">
+              <option value="chico">Chico (menos de 30 cm)</option>
+              <option value="mediano" selected>Mediano (30 – 60 cm)</option>
+              <option value="grande">Grande (más de 60 cm)</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="sub">Descripción
+          <textarea id="f-desc" rows="2" placeholder="Ej: se llena de agua cuando llueve, no se ve de noche"></textarea>
+        </label>
+
+        <label class="sub">Tu nombre <small>(opcional)</small>
+          <input id="f-autor" placeholder="Anónimo">
+        </label>
+      </div>
+
+      <div class="acciones">
+        <button type="button" class="btn-secundario" data-cerrar="modal-reporte">Cancelar</button>
+        <button type="submit" class="btn-primario">Enviar reporte</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== Modal: detalle ===== -->
+  <div id="modal-detalle" class="modal oculto">
+    <div class="modal-caja">
+      <header class="modal-cabecera">
+        <h2 id="d-titulo">Detalle</h2>
+        <button type="button" class="cerrar" data-cerrar="modal-detalle">✕</button>
+      </header>
+      <img id="d-foto" class="foto-grande" alt="Foto del bache">
+      <div id="d-ruta" class="aviso-ruta" hidden></div>
+      <div id="d-cuerpo"></div>
+      <div class="acciones">
+        <button type="button" id="btn-votar" class="btn-primario">👍 Yo también lo vi</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="aviso" class="aviso oculto"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="datos.js?v=5"></script>
+  <script src="fotos.js?v=5"></script>
+  <script src="api.js?v=5"></script>
+  <script src="app.js?v=8"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# ============================================================
+# Configuración de despliegue en Netlify
+# ============================================================
+
+[build]
+  # Las páginas (index.html y admin.html) las sirve el CDN de Netlify
+  # directamente desde acá. No hay build: son HTML, CSS y JS puros.
+  publish   = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# ---------- La API ----------
+# Todo /api/... entra a la función que envuelve Express.
+[[redirects]]
+  from   = "/api/*"
+  to     = "/.netlify/functions/api/api/:splat"
+  status = 200
+
+# ---------- Las fotos ----------
+# Las imágenes no están en el CDN: viven en Netlify Blobs y las devuelve
+# la misma función.
+[[redirects]]
+  from   = "/uploads/*"
+  to     = "/.netlify/functions/api/uploads/:splat"
+  status = 200

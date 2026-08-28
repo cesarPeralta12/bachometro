@@ -1,0 +1,406 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --hueco: #10131a;
+  --borde: #262b36;
+  --texto: #e6e8ec;
+  --suave: #9aa3b2;
+  --primario: #ff6b35;
+
+  --leve: #4ade80;
+  --moderado: #facc15;
+  --grave: #fb923c;
+  --critico: #ef4444;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--texto);
+}
+
+/* ---------- Barra superior ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--borde);
+}
+.logo { font-size: 18px; white-space: nowrap; }
+.logo span { color: var(--suave); font-size: 13px; }
+.buscador { margin-left: auto; max-width: 320px; }
+
+select, input, textarea {
+  background: var(--hueco);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 8px;
+  font: inherit;
+  width: 100%;
+}
+.topbar select { width: auto; }
+input[readonly] { color: var(--suave); }
+
+.btn-primario {
+  background: var(--primario);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primario:disabled { background: #3a3f4b; color: var(--suave); cursor: default; }
+.btn-secundario {
+  background: transparent;
+  color: var(--suave);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 9px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ---------- Layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  height: calc(100vh - 57px);
+}
+.panel {
+  background: var(--panel);
+  border-right: 1px solid var(--borde);
+  overflow-y: auto;
+  padding: 16px;
+}
+#mapa { height: 100%; }
+
+/* ---------- Stats ---------- */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 18px; }
+.stat {
+  background: var(--hueco);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 10px 4px;
+  text-align: center;
+}
+.stat span { display: block; font-size: 19px; font-weight: 700; }
+.stat small { color: var(--suave); font-size: 10px; }
+
+/* ---------- Filtros ---------- */
+.filtros h3, .lista h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--suave);
+  margin: 16px 0 8px;
+}
+.conteo { text-transform: none; letter-spacing: 0; }
+.filtros label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 3px 0;
+  cursor: pointer;
+}
+.filtros input { width: auto; }
+
+.punto {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--suave);
+}
+.punto.leve     { background: var(--leve); }
+.punto.moderado { background: var(--moderado); }
+.punto.grave    { background: var(--grave); }
+.punto.critico  { background: var(--critico); }
+
+/* ---------- Lista de reportes ---------- */
+.lista ul { list-style: none; margin: 0; padding: 0; }
+.lista .vacio {
+  color: var(--suave);
+  font-size: 13px;
+  padding: 12px;
+  border: 1px dashed var(--borde);
+  border-radius: 6px;
+}
+.item {
+  display: flex;
+  gap: 10px;
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--suave);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.item:hover { background: var(--hueco); }
+.item.leve     { border-left-color: var(--leve); }
+.item.moderado { border-left-color: var(--moderado); }
+.item.grave    { border-left-color: var(--grave); }
+.item.critico  { border-left-color: var(--critico); }
+
+.miniatura {
+  flex: 0 0 62px;
+  height: 62px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--hueco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.miniatura img { width: 100%; height: 100%; object-fit: cover; }
+.sin-foto { color: var(--suave); font-size: 10px; }
+.item-texto { min-width: 0; }
+.item-texto strong { display: block; margin-bottom: 4px; }
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--suave);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.chip {
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 10px;
+  color: var(--texto);
+}
+.chip.reportado   { border-color: #4b5262; }
+.chip.verificado  { border-color: #3b82f6; color: #93c5fd; }
+.chip.en_progreso { border-color: #a855f7; color: #d8b4fe; }
+.chip.reparado    { border-color: var(--leve); color: var(--leve); }
+.chip.waze        { border-color: #33ccff; color: #33ccff; }
+
+/* ---------- Popup del mapa ---------- */
+.leaflet-popup-content { margin: 10px; }
+.popup { width: 190px; font-family: system-ui, sans-serif; }
+.popup img {
+  width: 100%; height: 105px;
+  object-fit: cover;
+  border-radius: 5px;
+  margin-bottom: 6px;
+}
+.popup-meta { color: #666; font-size: 11px; margin: 3px 0 8px; }
+.popup button {
+  width: 100%;
+  background: var(--primario);
+  color: #fff;
+  border: 0;
+  border-radius: 5px;
+  padding: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---------- Modales ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+.modal.oculto { display: none; }
+.modal-caja {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 20px;
+  width: min(460px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.modal-cabecera h2 { margin: 0; font-size: 18px; }
+.cerrar {
+  background: transparent;
+  border: 0;
+  color: var(--suave);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.campo { margin-bottom: 18px; }
+.etiqueta {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.req { color: var(--primario); font-size: 11px; font-weight: 600; }
+.ayuda { color: var(--suave); font-size: 12px; margin: 6px 0 0; }
+.sub {
+  display: block;
+  font-size: 12px;
+  color: var(--suave);
+  margin-bottom: 10px;
+}
+.sub input, .sub select, .sub textarea { margin-top: 4px; }
+.fila { display: flex; gap: 8px; align-items: flex-start; }
+.fila > * { flex: 1; }
+.fila > button { flex: 0 0 auto; }
+
+/* Zona para tomar/subir la foto */
+.zona-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  border: 2px dashed var(--borde);
+  border-radius: 10px;
+  background: var(--hueco);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+}
+.zona-foto:hover { border-color: var(--primario); }
+.zona-foto img { width: 100%; max-height: 260px; object-fit: cover; display: block; }
+#zona-foto-texto strong { display: block; font-size: 14px; }
+#zona-foto-texto small { color: var(--suave); font-size: 12px; }
+
+/* Mapa chico dentro del formulario, para marcar el bache sin salir */
+#mini-mapa {
+  height: 210px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---------- Detalle ---------- */
+.foto-grande {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+.descripcion { margin: 0 0 14px; font-size: 14px; }
+.ficha { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 18px; }
+.ficha dt { color: var(--suave); font-size: 11px; text-transform: uppercase; }
+.ficha dd { margin: 2px 0 0; font-size: 14px; }
+
+/* ---------- Aviso flotante ---------- */
+.aviso {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primario);
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+.aviso.oculto { display: none; }
+
+/* ---------- Móvil ---------- */
+@media (max-width: 860px) {
+  .topbar { flex-wrap: wrap; }
+  .buscador { order: 3; margin-left: 0; max-width: none; width: 100%; }
+  /* En móvil el mapa va arriba y el panel abajo */
+  .layout { display: flex; flex-direction: column-reverse; height: auto; }
+  #mapa { height: 55vh; }
+  .panel { border-right: 0; border-top: 1px solid var(--borde); }
+  .fila { flex-direction: column; }
+  .fila > button { width: 100%; }
+  .ficha { grid-template-columns: 1fr; }
+}
+
+/* ---------- Pin de la alcaldía ---------- */
+.pin-alcaldia {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 2px solid var(--primario);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+
+/* ---------- Plan de bacheo visible para el ciudadano ---------- */
+.chip.programado { border-color: #38bdf8; color: #7dd3fc; }
+
+.popup-plan {
+  background: #e0f2fe;
+  color: #075985;
+  border-radius: 5px;
+  padding: 5px 7px;
+  font-size: 11px;
+  margin: 6px 0;
+}
+
+.aviso-plan {
+  border: 1px solid var(--borde);
+  border-left: 4px solid #38bdf8;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  background: var(--hueco);
+}
+.aviso-plan strong { color: #7dd3fc; }
+.aviso-plan div { margin-top: 4px; color: var(--suave); }
+.aviso-plan.en_ruta   { border-left-color: #a855f7; }
+.aviso-plan.en_ruta strong { color: #d8b4fe; }
+.aviso-plan.ejecutado { border-left-color: var(--leve); }
+.aviso-plan.ejecutado strong { color: var(--leve); }
+.aviso-plan.cancelado { border-left-color: #7f1d1d; }
+.aviso-plan.cancelado strong { color: #fca5a5; }
+
+/* Aviso de la ruta dibujada en el mapa */
+.aviso-ruta {
+  border: 1px solid var(--borde);
+  border-left: 4px solid #38bdf8;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  background: var(--hueco);
+}
+.aviso-ruta div { margin-top: 4px; color: var(--suave); }
+.nota-ruta { font-size: 11px; opacity: .75; }
+.btn-ruta-otra-vez {
+  margin-top: 10px;
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-ruta-otra-vez:hover { border-color: var(--primario); color: var(--primario); }

@@ -1,0 +1,19 @@
+{
+  "name": "bachometro",
+  "version": "2.0.0",
+  "description": "Plataforma ciudadana para reportar baches, con panel de alcaldía y plan de bacheo",
+  "type": "module",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "node --watch api/server.js",
+    "db": "node api/instalar-db.js",
+    "vaciar": "node api/vaciar-reportes.js"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^10.0.11",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "serverless-http": "^4.0.0"
+  }
+}
