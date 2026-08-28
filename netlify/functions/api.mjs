@@ -9,6 +9,12 @@
 // Así el mismo app.js corre en tu PC y acá, sin dos versiones del código.
 // (El ajuste de la URL con el prefijo de la función se hace dentro de
 // app.js, donde puede correr antes de las rutas.)
+//
+// La extensión .mjs no es un capricho. Con .js, Netlify empaqueta todo a
+// CommonJS, y en esa conversión `import.meta.url` queda undefined en TODO el
+// paquete —el código propio y también cualquier dependencia que lo use—.
+// Eso hacía morir la función al cargar, con un 502 sin explicación.
+// Con .mjs el paquete queda como ESM y `import.meta.url` sigue siendo válido.
 // ============================================================
 
 import serverless from 'serverless-http';
