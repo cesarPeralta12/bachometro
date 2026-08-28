@@ -21,9 +21,6 @@ import { fileURLToPath } from 'node:url';
 import { pool, configuracionFaltante } from './db.js';
 import * as almacen from './almacen.js';
 
-const aqui = path.dirname(fileURLToPath(import.meta.url));
-const RAIZ = path.join(aqui, '..');
-
 const app = express();
 
 // Las fotos llegan en base64 dentro del JSON, por eso el límite alto.
@@ -880,7 +877,10 @@ app.get('/uploads/:archivo', async (req, res, siguiente) => {
 // En Netlify las páginas las sirve su CDN directamente y esto no se usa,
 // pero en tu PC es lo que hace que todo viva en una sola dirección.
 if (!almacen.enNetlify) {
-  app.use(express.static(path.join(RAIZ, 'public')));
+  // La ruta se calcula acá adentro: ver el comentario en db.js sobre
+  // import.meta.url y el empaquetador de Netlify.
+  const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  app.use(express.static(path.join(raiz, 'public')));
 }
 
 // ---------- Errores ----------

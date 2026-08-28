@@ -8,11 +8,15 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const aqui = path.dirname(fileURLToPath(import.meta.url));
-
 // El archivo .env es para tu PC. En Netlify no existe: las variables las
-// inyecta la plataforma, y leer un archivo inexistente solo agrega ruido.
+// inyecta la plataforma.
+//
+// La ruta se calcula ACÁ ADENTRO a propósito. El empaquetador de Netlify
+// transforma los módulos y en el resultado `import.meta.url` queda undefined,
+// así que calcularla arriba del archivo hacía reventar la función al cargar
+// —aunque en Netlify esta ruta no se use nunca—.
 if (!process.env.NETLIFY) {
+  const aqui = path.dirname(fileURLToPath(import.meta.url));
   dotenv.config({ path: path.join(aqui, '.env') });
 }
 

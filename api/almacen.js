@@ -18,8 +18,15 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const aqui = path.dirname(fileURLToPath(import.meta.url));
-const CARPETA = path.join(aqui, 'uploads');
+// Dónde guarda las fotos cuando corre en tu PC.
+//
+// Es una función y no una constante porque el empaquetador de Netlify deja
+// `import.meta.url` en undefined, y calcularlo al cargar el módulo hacía
+// fallar la función entera —aunque allá las fotos van a Blobs y esta carpeta
+// no se toque nunca—.
+function carpetaLocal() {
+  return path.join(path.dirname(fileURLToPath(import.meta.url)), 'uploads');
+}
 
 // Netlify define esta variable en todos sus entornos de ejecución.
 export const enNetlify = Boolean(process.env.NETLIFY);
@@ -72,8 +79,8 @@ export async function guardar(nombre, binario, tipo) {
   }
 
   const disco = await fs();
-  await disco.mkdir(CARPETA, { recursive: true });
-  await disco.writeFile(path.join(CARPETA, seguro), binario);
+  await disco.mkdir(carpetaLocal(), { recursive: true });
+  await disco.writeFile(path.join(carpetaLocal(), seguro), binario);
 }
 
 // Devuelve { binario, tipo } o null si no está.
@@ -91,7 +98,7 @@ export async function leer(nombre) {
   try {
     const disco = await fs();
     return {
-      binario: await disco.readFile(path.join(CARPETA, seguro)),
+      binario: await disco.readFile(path.join(carpetaLocal(), seguro)),
       tipo: tipoDe(seguro),
     };
   } catch (error) {
@@ -112,7 +119,7 @@ export async function borrar(nombre) {
 
   try {
     const disco = await fs();
-    await disco.unlink(path.join(CARPETA, seguro));
+    await disco.unlink(path.join(carpetaLocal(), seguro));
   } catch (error) {
     // Si ya no está, el objetivo igual se cumplió.
     if (error.code !== 'ENOENT') console.error('No se pudo borrar la foto:', error.message);
@@ -133,13 +140,13 @@ export async function listar() {
   }
 
   const disco = await fs();
-  await disco.mkdir(CARPETA, { recursive: true });
+  await disco.mkdir(carpetaLocal(), { recursive: true });
 
-  const archivos = (await disco.readdir(CARPETA)).filter(a => !a.startsWith('.'));
+  const archivos = (await disco.readdir(carpetaLocal())).filter(a => !a.startsWith('.'));
   const resultado = [];
 
   for (const nombre of archivos) {
-    const info = await disco.stat(path.join(CARPETA, nombre));
+    const info = await disco.stat(path.join(carpetaLocal(), nombre));
     if (info.isFile()) resultado.push({ nombre, bytes: info.size });
   }
   return resultado;
