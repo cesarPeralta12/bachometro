@@ -9,7 +9,12 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(aqui, '.env') });
+
+// El archivo .env es para tu PC. En Netlify no existe: las variables las
+// inyecta la plataforma, y leer un archivo inexistente solo agrega ruido.
+if (!process.env.NETLIFY) {
+  dotenv.config({ path: path.join(aqui, '.env') });
+}
 
 // Hay dos formas de decir a qué base conectarse:
 //
@@ -24,16 +29,33 @@ export const urlDeLaBase =
   process.env.DATABASE_URL ||
   null;
 
-if (!urlDeLaBase) {
+const enServerless = Boolean(process.env.NETLIFY);
+
+// Qué le falta a la configuración, si es que le falta algo.
+//
+// Se guarda en vez de cortar el proceso porque en serverless no hay a quién
+// avisarle: matar la función deja al navegador con un 502 sin explicación.
+// Mejor arrancar igual y que cada pedido conteste qué falta.
+export const configuracionFaltante = (() => {
+  if (urlDeLaBase) return null;
+
   const faltantes = ['PGHOST', 'PGPORT', 'PGDATABASE', 'PGUSER', 'PGPASSWORD']
     .filter(v => !process.env[v]);
 
-  if (faltantes.length) {
-    console.error(`\nFaltan variables en api/.env: ${faltantes.join(', ')}`);
-    console.error('Copiá api/.env.example a api/.env y completalo,');
-    console.error('o definí DATABASE_URL si la base está en la nube.\n');
-    process.exit(1);
-  }
+  if (!faltantes.length) return null;
+
+  return enServerless
+    ? 'La base de datos no está configurada. Falta activar Netlify DB, o definir DATABASE_URL en las variables de entorno del sitio.'
+    : `Faltan variables en api/.env: ${faltantes.join(', ')}`;
+})();
+
+// En tu PC sí conviene cortar: el mensaje se ve en la terminal y arrancar sin
+// base solo llevaría a errores confusos más adelante.
+if (configuracionFaltante && !enServerless) {
+  console.error(`\n${configuracionFaltante}`);
+  console.error('Copiá api/.env.example a api/.env y completalo,');
+  console.error('o definí DATABASE_URL si la base está en la nube.\n');
+  process.exit(1);
 }
 
 // Los bigint (OID 20) llegan como texto por defecto: el driver los protege
@@ -48,8 +70,6 @@ pg.types.setTypeParser(20, valor => parseInt(valor, 10));
 
 // En serverless conviene un pool chico: cada función es un proceso aparte y
 // entre todas pueden agotar las conexiones de la base.
-const enServerless = Boolean(process.env.NETLIFY);
-
 export const pool = new pg.Pool(urlDeLaBase
   ? {
       connectionString: urlDeLaBase,

@@ -18,7 +18,7 @@ import express from 'express';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { pool } from './db.js';
+import { pool, configuracionFaltante } from './db.js';
 import * as almacen from './almacen.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
@@ -36,6 +36,15 @@ app.use(express.json({ limit: '12mb' }));
 // así que no hace nada.
 app.use((req, _res, siguiente) => {
   req.url = req.url.replace(/^\/\.netlify\/functions\/api/, '') || '/';
+  siguiente();
+});
+
+// Sin base de datos no hay nada que contestar. Se responde con el motivo
+// concreto en vez de dejar que reviente más adelante con un error genérico.
+app.use('/api', (_req, res, siguiente) => {
+  if (configuracionFaltante) {
+    return res.status(503).json({ error: configuracionFaltante });
+  }
   siguiente();
 });
 
