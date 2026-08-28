@@ -20,6 +20,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { pool, configuracionFaltante } from './db.js';
 import * as almacen from './almacen.js';
+import { ESQUEMA, SEMILLA } from './esquema.js';
 
 const app = express();
 
@@ -857,6 +858,34 @@ app.delete('/api/admin/cuadrillas/:id', requiereAdmin, async (req, res, siguient
 
     res.json({ ok: true, trabajosLiberados: abiertos.rows[0].n });
   } catch (error) { siguiente(error); }
+});
+
+// ---------- Instalación de la base ----------
+// Crea las tablas y carga los datos iniciales usando la conexión que ya tiene
+// el servidor. Existe porque en Netlify la cadena de conexión no se puede
+// copiar a ningún lado: la plataforma se la inyecta a la función y nadie más
+// la ve. Así el sitio se instala solo, sin que la credencial ande dando vueltas.
+//
+// Se puede llamar las veces que haga falta: el esquema es idempotente y la
+// semilla solo carga ejemplos si la tabla de reportes está vacía.
+app.post('/api/admin/instalar', requiereAdmin, async (_req, res, siguiente) => {
+  try {
+    await pool.query(ESQUEMA);
+    await pool.query(SEMILLA);
+
+    const { rows: [conteo] } = await pool.query(`
+      SELECT (SELECT count(*) FROM departamentos)::int AS departamentos,
+             (SELECT count(*) FROM alcaldias)::int     AS alcaldias,
+             (SELECT count(*) FROM cuadrillas)::int    AS cuadrillas,
+             (SELECT count(*) FROM reportes)::int      AS reportes,
+             (SELECT count(*) FROM plan_bacheo)::int   AS plan
+    `);
+
+    res.json({ ok: true, ...conteo });
+  } catch (error) {
+    console.error('Falló la instalación de la base:', error);
+    res.status(500).json({ error: `No se pudo instalar el esquema: ${error.message}` });
+  }
 });
 
 // ---------- Fotos ----------
