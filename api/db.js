@@ -19,14 +19,18 @@ if (!enServerless) {
 // Hay dos formas de decir a qué base conectarse:
 //
 //   1. Una URL completa  -> la que da Netlify DB (NETLIFY_DATABASE_URL) o
-//      cualquier Postgres en la nube. Es una sola variable.
+//      cualquier Postgres en la nube. Es una sola variable. Se prueban varios
+//      nombres porque cada proveedor usa el suyo, y la versión "unpooled" va
+//      primero: es la que conviene para crear tablas.
 //   2. Las variables PG* -> lo que se usa en tu PC, donde la contraseña la
 //      escribís en api/.env.
 //
 // Se prefiere la URL cuando está, porque es la que existe en producción.
 export const urlDeLaBase =
+  process.env.NETLIFY_DATABASE_URL_UNPOOLED ||
   process.env.NETLIFY_DATABASE_URL ||
   process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
   null;
 
 // Qué le falta a la configuración, si es que le falta algo.
