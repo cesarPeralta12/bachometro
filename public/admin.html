@@ -6,7 +6,7 @@
   <title>Bachómetro — Panel de administración</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="styles.css?v=5">
-  <link rel="stylesheet" href="admin.css?v=5">
+  <link rel="stylesheet" href="admin.css?v=8">
 </head>
 <body class="admin">
 
@@ -14,7 +14,7 @@
   <div id="pantalla-acceso" class="acceso">
     <form id="form-acceso" class="acceso-caja">
       <h1>🕳️ Panel de administración</h1>
-      <p class="ayuda">Ingresá el token configurado en <code>api/.env</code>.</p>
+      <p class="ayuda">Ingresá el token de administración.</p>
       <input id="f-token" type="password" placeholder="Token de administración" required autocomplete="current-password">
       <p id="error-acceso" class="error-acceso"></p>
       <button type="submit" class="btn-primario">Entrar</button>
@@ -421,7 +421,7 @@
   <div id="aviso" class="aviso oculto"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="admin.js?v=5"></script>
+  <script src="admin.js?v=8"></script>
   <script src="admin-plan.js?v=5"></script>
   <script src="admin-rutas.js?v=5"></script>
   <script src="admin-cuadrilla.js?v=7"></script>
