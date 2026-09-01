@@ -55,6 +55,12 @@ const API = {
     return pedir(`/api/ruta?${p}`);
   },
 
+  // Baches ya reportados a pocos metros del punto elegido.
+  cercanos(depto, lat, lng) {
+    const p = new URLSearchParams({ depto, lat, lng });
+    return pedir(`/api/reportes/cercanos?${p}`);
+  },
+
   crearReporte(datos) {
     return pedir('/api/reportes', {
       method: 'POST',

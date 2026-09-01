@@ -11,6 +11,7 @@ let marcadores    = [];
 let coordsNuevas  = null;    // ubicación elegida para el reporte nuevo
 let fotoNueva     = null;    // foto ya comprimida, lista para subir
 let detalleActual = null;    // id del reporte abierto en el modal
+let duplicadoAsumido = false;  // el vecino dijo "es otro bache, va igual"
 
 // Cómo se le muestra al ciudadano el avance del trabajo de la alcaldía.
 const ETIQUETAS_TRABAJO = {
@@ -75,7 +76,80 @@ function fijarUbicacion(lat, lng, centrarMini = false) {
     }
     if (centrarMini) miniMapa.setView([lat, lng], 17);
   }
+
+  buscarDuplicados(lat, lng);
 }
+
+// ---------- Aviso de bache repetido ----------
+// Dos personas que fotografían el mismo pozo desde veredas distintas crean dos
+// reportes que parecen diferentes. En vez de dejar que eso pase y limpiarlo
+// después desde el panel, se avisa en el momento: es más fácil confirmar un
+// bache existente que borrarlo duplicado más tarde.
+let relojDuplicados = null;
+
+function buscarDuplicados(lat, lng) {
+  const caja = document.getElementById('aviso-duplicado');
+  caja.hidden = true;
+  duplicadoAsumido = false;
+
+  // El pin se puede arrastrar: se espera a que el vecino lo suelte.
+  clearTimeout(relojDuplicados);
+  relojDuplicados = setTimeout(async () => {
+    try {
+      const { cercanos } = await API.cercanos(deptoActual, lat, lng);
+      if (!cercanos.length) return;
+
+      const c = cercanos[0];
+      caja.hidden = false;
+      caja.innerHTML = `
+        <div class="duplicado-cabecera">
+          <strong>¿Es este mismo bache?</strong>
+          <span>Ya hay uno reportado a ${c.distancia_m} m</span>
+        </div>
+        <div class="duplicado-cuerpo">
+          ${c.foto_url ? `<img src="${esc(c.foto_url)}" alt="">` : '<div class="sin-foto">sin foto</div>'}
+          <div>
+            <strong>${esc(c.referencia)}</strong>
+            <div class="meta">${ETIQUETAS_ESTADO[c.estado]} · 👍 ${c.votos} confirmaciones · ${c.fecha}</div>
+          </div>
+        </div>
+        <div class="duplicado-acciones">
+          <button type="button" class="btn-primario" data-confirmar="${c.id}">
+            ${c.ya_vote ? '✓ Ya lo confirmaste' : '👍 Sí, es el mismo'}
+          </button>
+          <button type="button" class="btn-secundario" data-es-otro="1">No, es otro bache</button>
+        </div>
+      `;
+      caja.querySelector('[data-confirmar]').disabled = c.ya_vote;
+    } catch (error) {
+      console.warn('No se pudieron buscar baches cercanos:', error.message);
+    }
+  }, 400);
+}
+
+document.getElementById('aviso-duplicado').addEventListener('click', async (e) => {
+  const id = e.target.dataset.confirmar;
+  if (id) {
+    // Confirmar el existente vale más que un reporte nuevo: suma una voz al
+    // que ya está en el mapa en vez de partir la evidencia en dos.
+    try {
+      await API.votar(Number(id));
+      cerrar('modal-reporte');
+      limpiarFormulario();
+      await traerReportes();
+      avisar('¡Gracias! Sumaste tu confirmación a ese bache.');
+      verDetalle(Number(id));
+    } catch (error) {
+      avisar(`No se pudo confirmar: ${error.message}`);
+    }
+    return;
+  }
+
+  if (e.target.dataset.esOtro) {
+    duplicadoAsumido = true;
+    document.getElementById('aviso-duplicado').hidden = true;
+  }
+});
 
 // El mapa chico se crea recién cuando se abre el formulario: Leaflet no puede
 // medir un contenedor escondido, por eso además hay que avisarle el tamaño.
@@ -575,6 +649,7 @@ document.getElementById('form-reporte').onsubmit = async (e) => {
       tamano:      document.getElementById('f-tamano').value,
       autor:       document.getElementById('f-autor').value.trim(),
       fotoBase64:  fotoNueva,
+      forzar:      duplicadoAsumido,
     });
 
     reportes.unshift(creado);

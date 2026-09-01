@@ -7,7 +7,7 @@
 
   <!-- Leaflet: mapa gratis, sin API key -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -87,6 +87,8 @@
         <p id="ayuda-ubicacion" class="ayuda">
           Tocá el mapa para poner el pin. Podés arrastrarlo para ajustarlo.
         </p>
+        <div id="aviso-duplicado" class="aviso-duplicado" hidden></div>
+
         <div class="fila">
           <input id="f-coords" readonly placeholder="Sin marcar todavía">
           <button type="button" id="btn-gps" class="btn-secundario" title="Usar mi ubicación actual">📍 GPS</button>
@@ -157,7 +159,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="datos.js?v=5"></script>
   <script src="fotos.js?v=5"></script>
-  <script src="api.js?v=5"></script>
-  <script src="app.js?v=8"></script>
+  <script src="api.js?v=9"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

@@ -196,6 +196,56 @@ app.get('/api/reportes', async (req, res, siguiente) => {
   } catch (error) { siguiente(error); }
 });
 
+// ---------- Baches cercanos ----------
+// Dos vecinos que fotografían el mismo pozo desde veredas distintas generan
+// dos reportes que parecen diferentes. Este radio es el margen para tratarlos
+// como el mismo: el GPS de un celular común se equivoca entre 10 y 20 metros,
+// así que menos de 30 daría falsos negativos y más empezaría a juntar baches
+// que de verdad son distintos.
+const RADIO_DUPLICADO_M = 30;
+
+// Distancia real entre dos puntos de la Tierra (fórmula del haversine).
+// Se calcula en SQL para no traer todos los reportes al servidor.
+//
+// Recibe los NÚMEROS de los parámetros porque cada consulta que la usa tiene
+// los suyos en distinta posición. Fijarlos acá dejaba un $1 sin usar en una de
+// ellas, y Postgres rechaza la consulta entera cuando no puede deducir el tipo
+// de un parámetro que nadie referencia.
+const distanciaSql = (pLat, pLng) => `
+  6371000 * 2 * asin(sqrt(
+    power(sin(radians(($${pLat}::float8 - r.lat) / 2)), 2) +
+    cos(radians($${pLat}::float8)) * cos(radians(r.lat)) *
+    power(sin(radians(($${pLng}::float8 - r.lng) / 2)), 2)
+  ))
+`;
+
+app.get('/api/reportes/cercanos', async (req, res, siguiente) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const radio = Math.min(Number(req.query.radio) || RADIO_DUPLICADO_M, 500);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return res.status(400).json({ error: 'Coordenadas inválidas.' });
+    }
+
+    // Los baches ya reparados no cuentan: si el pozo volvió a abrirse, es un
+    // reporte nuevo legítimo.
+    const { rows } = await pool.query(
+      `SELECT * FROM (
+         ${SELECT_REPORTE.replace('FROM reportes r', `, round(${distanciaSql(2, 3)})::int AS distancia_m FROM reportes r`)}
+         WHERE r.depto = $4 AND r.estado <> 'reparado'
+       ) AS cercanos
+       WHERE distancia_m <= $5
+       ORDER BY distancia_m
+       LIMIT 5`,
+      [null, lat, lng, req.query.depto, radio]
+    );
+
+    res.json({ radio, cercanos: rows });
+  } catch (error) { siguiente(error); }
+});
+
 app.post('/api/reportes', async (req, res, siguiente) => {
   try {
     if (!pasaElLimite(req.ip)) {
@@ -214,6 +264,29 @@ app.post('/api/reportes', async (req, res, siguiente) => {
 
     const { rowCount } = await pool.query('SELECT 1 FROM departamentos WHERE codigo = $1', [cuerpo.depto]);
     if (!rowCount) return res.status(400).json({ error: 'Departamento desconocido.' });
+
+    // Freno de duplicados también acá, no solo en el navegador: el aviso de la
+    // pantalla se puede saltear, y dos reportes del mismo pozo parten la
+    // evidencia en dos y ensucian el plan de bacheo.
+    //
+    // Con `forzar` el vecino dice "ya vi el aviso, es otro bache" y pasa igual.
+    if (!cuerpo.forzar) {
+      const cerca = await pool.query(
+        `SELECT id, referencia, round(${distanciaSql(1, 2)})::int AS distancia_m
+         FROM reportes r
+         WHERE r.depto = $3 AND r.estado <> 'reparado'
+           AND ${distanciaSql(1, 2)} <= $4
+         ORDER BY 3 LIMIT 1`,
+        [lat, lng, cuerpo.depto, RADIO_DUPLICADO_M]
+      );
+
+      if (cerca.rowCount) {
+        return res.status(409).json({
+          error: `Ya hay un bache reportado a ${cerca.rows[0].distancia_m} m: "${cerca.rows[0].referencia}". Confirmalo en vez de reportarlo de nuevo, o marcá que es otro.`,
+          duplicado: cerca.rows[0],
+        });
+      }
+    }
 
     const gravedad = GRAVEDADES.includes(cuerpo.gravedad) ? cuerpo.gravedad : 'moderado';
     const tamano   = TAMANOS.includes(cuerpo.tamano)      ? cuerpo.tamano   : 'mediano';
